@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getOne } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -27,7 +28,8 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          if (user.password !== credentials.password) {
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+          if (!isValidPassword) {
             console.error('Invalid password for user:', credentials.username);
             return null;
           }
@@ -59,9 +61,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.name = token.name as string;
-        session.user.email = token.email as string;
+        (session.user as { id: unknown; name: unknown; email: unknown }).id = token.id;
+        (session.user as { id: unknown; name: unknown; email: unknown }).name = token.name;
+        (session.user as { id: unknown; name: unknown; email: unknown }).email = token.email;
       }
       return session;
     },

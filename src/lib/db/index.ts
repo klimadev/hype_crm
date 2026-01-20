@@ -18,12 +18,18 @@ function getDb(): Database.Database {
   dbInstance = new Database(DB_PATH);
   dbInstance.pragma('journal_mode = WAL');
 
-  // Always ensure tables exist and default data is present
   dbInstance.exec(CREATE_TABLES_SQL);
-  // Check if users table is empty and insert default user if needed
+
   const userCount = dbInstance.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
   if (userCount.count === 0) {
     dbInstance.exec(INSERT_DEFAULT_DATA_SQL);
+  }
+
+  const columns = dbInstance.prepare("PRAGMA table_info(stages)").all() as { name: string }[];
+  const hasColorColumn = columns.some(col => col.name === 'color');
+  if (!hasColorColumn) {
+    dbInstance.exec("ALTER TABLE stages ADD COLUMN color TEXT DEFAULT '#6366f1'");
+    dbInstance.exec("UPDATE stages SET color = '#6366f1' WHERE color IS NULL");
   }
 
   return dbInstance;
@@ -32,22 +38,26 @@ function getDb(): Database.Database {
 export function query<T>(sql: string, params?: unknown[]): T[] {
   const db = getDb();
   const stmt = db.prepare(sql);
-  if (params) stmt.bind(params as never[]);
+  if (params) {
+    return stmt.bind(...params as never[]).all() as T[];
+  }
   return stmt.all() as T[];
 }
 
 export function run(sql: string, params?: unknown[]): { id: number; changes: number } {
   const db = getDb();
   const stmt = db.prepare(sql);
-  stmt.run(params as never[]);
-  const info = db.prepare('SELECT last_insert_rowid() as id, changes() as changes').get() as { id: number; changes: number };
-  return info;
+  const info = params ? stmt.bind(...params as never[]).run() : stmt.run();
+  return { id: info.lastInsertRowid as number, changes: info.changes };
 }
 
 export function getOne<T>(sql: string, params?: unknown[]): T | null {
   const db = getDb();
   const stmt = db.prepare(sql);
-  return stmt.get(params as never[]) as T | null;
+  if (params) {
+    return stmt.bind(...params as never[]).get() as T | null;
+  }
+  return stmt.get() as T | null;
 }
 
 export function closeDb() {
@@ -55,4 +65,8 @@ export function closeDb() {
     dbInstance.close();
     dbInstance = null;
   }
+}
+
+export function isDbOpen(): boolean {
+  return dbInstance !== null;
 }

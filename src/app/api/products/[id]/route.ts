@@ -28,6 +28,11 @@ export async function PUT(
     const { id } = await params;
     const { name, description, price, type } = await request.json();
 
+    const existingProduct = await getOne('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    if (!existingProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
     await run(
       `UPDATE products SET name = ?, description = ?, price = ?, type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [name, description || null, price || 0, type, parseInt(id)]
@@ -47,6 +52,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const existingProduct = await getOne('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    if (!existingProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
     await run('DELETE FROM products WHERE id = ?', [parseInt(id)]);
     return NextResponse.json({ success: true });
   } catch (error) {

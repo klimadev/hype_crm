@@ -19,6 +19,7 @@ export const CREATE_TABLES_SQL = `
   CREATE TABLE IF NOT EXISTS stages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    color TEXT DEFAULT '#6366f1',
     position INTEGER NOT NULL DEFAULT 0,
     product_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -62,19 +63,29 @@ export const CREATE_TABLES_SQL = `
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
     FOREIGN KEY (stage_id) REFERENCES stages(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS sent_whatsapp_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id INTEGER NOT NULL,
+    event_id INTEGER NOT NULL,
+    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES whatsapp_events(id) ON DELETE CASCADE,
+    UNIQUE(lead_id, event_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_leads_stage_id ON leads(stage_id);
+  CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone);
+  CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+  CREATE INDEX IF NOT EXISTS idx_lead_stage_history_lead_id ON lead_stage_history(lead_id);
+  CREATE INDEX IF NOT EXISTS idx_lead_stage_history_stage_id ON lead_stage_history(stage_id);
+  CREATE INDEX IF NOT EXISTS idx_stages_position ON stages(position);
+  CREATE INDEX IF NOT EXISTS idx_whatsapp_events_stage_id ON whatsapp_events(stage_id);
+  CREATE INDEX IF NOT EXISTS idx_whatsapp_events_product_id ON whatsapp_events(product_id);
+  CREATE INDEX IF NOT EXISTS idx_sent_messages_lead_id ON sent_whatsapp_messages(lead_id);
+  CREATE INDEX IF NOT EXISTS idx_sent_messages_event_id ON sent_whatsapp_messages(event_id);
 `;
 
 export const INSERT_DEFAULT_DATA_SQL = `
-  INSERT INTO users (username, password) VALUES ('admin', 'admin123');
-
-  INSERT INTO products (name, description, price, type) VALUES 
-    ('Consultoria inicial', 'Primeira reunião de consultoria', 0.00, 'service'),
-    ('Plano Básico', 'Plano básico de acompanhamento', 99.00, 'product');
-
-  INSERT INTO stages (name, position, product_id) VALUES
-    ('Novo', 0, NULL),
-    ('Contato', 1, NULL),
-    ('Qualificação', 2, NULL),
-    ('Proposta', 3, NULL),
-    ('Fechado', 4, NULL);
+  INSERT INTO users (username, password) VALUES ('admin', '$2a$10$rBV2JIAXxZNMXRdQxpR0XuPQ0YqKpV8K0U0K9qp5EcL9LQ4m9wWce');
 `;

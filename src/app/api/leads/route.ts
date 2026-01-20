@@ -1,16 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config';
 import { query, run, getOne } from '@/lib/db';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const leads = await query(`
-      SELECT l.*, s.name as stage_name, p.name as product_name
-      FROM leads l
-      LEFT JOIN stages s ON l.stage_id = s.id
-      LEFT JOIN products p ON l.product_id = p.id
-      ORDER BY l.created_at DESC
-    `);
-    return NextResponse.json(leads);
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
+    const offset = (page - 1) * limit;
+
+    const [leads, total] = await Promise.all([
+      query(`
+        SELECT l.*, s.name as stage_name, p.name as product_name
+        FROM leads l
+        LEFT JOIN stages s ON l.stage_id = s.id
+        LEFT JOIN products p ON l.product_id = p.id
+        ORDER BY l.created_at DESC
+        LIMIT ? OFFSET ?
+      `, [limit, offset]),
+      getOne<{ count: number }>('SELECT COUNT(*) as count FROM leads'),
+    ]);
+
+    return NextResponse.json({
+      leads,
+      pagination: {
+        page,
+        limit,
+        total: total?.count || 0,
+        totalPages: Math.ceil((total?.count || 0) / limit),
+      },
+    });
   } catch (error) {
     console.error('Error fetching leads:', error);
     return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
@@ -19,10 +44,20 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { name, phone, email, product_id, stage_id } = await request.json();
 
     if (!name || !phone) {
       return NextResponse.json({ error: 'Name and phone are required' }, { status: 400 });
+    }
+
+    const phoneRegex = /^\(?([0-9]{2})\)?[-. ]?([0-9]{5})[-. ]?([0-9]{4})$/;
+    if (!phoneRegex.test(phone)) {
+      return NextResponse.json({ error: 'Invalid phone format. Use format: (11) 99999-9999' }, { status: 400 });
     }
 
     const result = await run(
