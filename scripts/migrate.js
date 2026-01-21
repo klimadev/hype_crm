@@ -15,12 +15,20 @@ function migrate() {
       const productsInfo = db.prepare("PRAGMA table_info(products)").all();
       const hasRecurrenceType = productsInfo.find((col) => col.name === 'recurrence_type');
       const hasRecurrenceDays = productsInfo.find((col) => col.name === 'recurrence_days');
+      const hasInstanceName = productsInfo.find((col) => col.name === 'instance_name');
 
       if (!hasRecurrenceType) {
         db.prepare("ALTER TABLE products ADD COLUMN recurrence_type TEXT DEFAULT 'none' CHECK (recurrence_type IN ('none', 'minute_30', 'hour_1', 'hour_2', 'hour_4', 'hour_8', 'day_1', 'day_3', 'day_7', 'day_15', 'day_30', 'day_60', 'day_90', 'month_1', 'month_2', 'month_3', 'month_6'))").run();
         console.log('✅ Added recurrence_type column to products');
       } else {
         console.log('ℹ️  recurrence_type column already exists');
+      }
+
+      if (!hasInstanceName) {
+        db.prepare("ALTER TABLE products ADD COLUMN instance_name TEXT DEFAULT 'teste2'").run();
+        console.log('✅ Added instance_name column to products');
+      } else {
+        console.log('ℹ️  instance_name column already exists');
       }
 
       if (hasRecurrenceDays) {

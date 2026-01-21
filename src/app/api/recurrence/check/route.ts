@@ -31,6 +31,7 @@ interface ReminderCheck {
   lead_phone: string;
   product_id: number;
   product_name: string;
+  instance_name: string;
   reminder_id: number;
   delay_value: number;
   delay_unit: string;
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
         l.phone as lead_phone,
         p.id as product_id,
         p.name as product_name,
+        p.instance_name,
         pr.id as reminder_id,
         pr.delay_value,
         pr.delay_unit,
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
           sent = true;
         } else {
           const result = await sendWhatsAppMessage({
-            instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+            instanceName: reminder.instance_name || process.env.EVOLUTION_INSTANCE_NAME || 'teste2',
             phone: reminder.lead_phone,
             message,
           });

@@ -22,6 +22,7 @@ interface LeadInfo {
   product_id: number | null;
   stage_id: number;
   product_name?: string;
+  instance_name?: string;
   stage_name?: string;
 }
 
@@ -140,7 +141,7 @@ async function processEvent(event: WhatsAppEvent, leadId: number): Promise<void>
   console.log(`[WhatsApp Events] 🔄 processEvent: event="${event.name}", leadId=${leadId}`);
 
   const lead = await getOne<LeadInfo>(`
-    SELECT l.*, p.name as product_name, s.name as stage_name
+    SELECT l.*, p.name as product_name, p.instance_name, s.name as stage_name
     FROM leads l
     LEFT JOIN products p ON l.product_id = p.id
     LEFT JOIN stages s ON l.stage_id = s.id
@@ -152,7 +153,7 @@ async function processEvent(event: WhatsAppEvent, leadId: number): Promise<void>
     return;
   }
 
-  console.log(`[WhatsApp Events] 👤 Lead info: name="${lead.name}", phone="${lead.phone}", product="${lead.product_name}"`);
+  console.log(`[WhatsApp Events] 👤 Lead info: name="${lead.name}", phone="${lead.phone}", product="${lead.product_name}", instance="${lead.instance_name}"`);
 
   const message = resolveTemplate(event.message_template, {
     leadName: lead.name,
@@ -177,7 +178,7 @@ async function processEvent(event: WhatsAppEvent, leadId: number): Promise<void>
     console.log(`[MOCK] ✅ Mensagem mockada registrada para lead ${leadId}`);
   } else {
     const result = await sendWhatsAppMessage({
-      instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+      instanceName: lead.instance_name || process.env.EVOLUTION_INSTANCE_NAME || 'teste2',
       phone: lead.phone,
       message,
     });

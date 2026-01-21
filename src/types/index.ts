@@ -28,6 +28,7 @@ export interface Product {
   price: number;
   type: 'product' | 'service';
   recurrence_type: RecurrenceType;
+  instance_name: string | null;
   created_at: string;
   updated_at: string;
 }

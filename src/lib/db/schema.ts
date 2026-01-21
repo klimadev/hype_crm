@@ -13,6 +13,7 @@ export const CREATE_TABLES_SQL = `
     price DECIMAL(10, 2),
     type TEXT NOT NULL CHECK (type IN ('product', 'service')),
     recurrence_type TEXT DEFAULT 'none' CHECK (recurrence_type IN ('none', 'minute_30', 'hour_1', 'hour_2', 'hour_4', 'hour_8', 'day_1', 'day_3', 'day_7', 'day_15', 'day_30', 'day_60', 'day_90', 'month_1', 'month_2', 'month_3', 'month_6')),
+    instance_name TEXT DEFAULT 'teste2',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -128,6 +129,7 @@ export const CREATE_TABLES_SQL = `
   CREATE INDEX IF NOT EXISTS idx_whatsapp_events_stage_id ON whatsapp_events(stage_id);
   CREATE INDEX IF NOT EXISTS idx_whatsapp_events_product_id ON whatsapp_events(product_id);
   CREATE INDEX IF NOT EXISTS idx_products_recurrence_type ON products(recurrence_type);
+  CREATE INDEX IF NOT EXISTS idx_products_instance_name ON products(instance_name);
   CREATE INDEX IF NOT EXISTS idx_product_reminders_product_id ON product_reminders(product_id);
   CREATE INDEX IF NOT EXISTS idx_product_reminders_stage_id ON product_reminders(stage_id);
   CREATE INDEX IF NOT EXISTS idx_lead_recurrence_tracker_lead_id ON lead_recurrence_tracker(lead_id);
