@@ -25,6 +25,7 @@ export const CREATE_TABLES_SQL = `
     delay_value INTEGER NOT NULL DEFAULT 1,
     delay_unit TEXT NOT NULL DEFAULT 'day' CHECK (delay_unit IN ('minute', 'hour', 'day', 'week', 'month')),
     reminder_mode TEXT NOT NULL DEFAULT 'once' CHECK (reminder_mode IN ('once', 'recurring')),
+    instance_name TEXT,
     message TEXT NOT NULL,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

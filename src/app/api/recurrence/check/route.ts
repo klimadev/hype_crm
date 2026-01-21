@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         l.phone as lead_phone,
         p.id as product_id,
         p.name as product_name,
-        p.instance_name,
+        pr.instance_name,
         pr.id as reminder_id,
         pr.delay_value,
         pr.delay_unit,

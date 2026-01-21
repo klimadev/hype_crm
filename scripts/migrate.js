@@ -43,6 +43,7 @@ function migrate() {
       const hasDelayValue = remindersInfo.find((col) => col.name === 'delay_value');
       const hasDelayUnit = remindersInfo.find((col) => col.name === 'delay_unit');
       const hasReminderMode = remindersInfo.find((col) => col.name === 'reminder_mode');
+      const hasInstanceName = remindersInfo.find((col) => col.name === 'instance_name');
 
       if (!hasDelayValue) {
         db.prepare("ALTER TABLE product_reminders ADD COLUMN delay_value INTEGER DEFAULT 1").run();
@@ -57,6 +58,11 @@ function migrate() {
       if (!hasReminderMode) {
         db.prepare("ALTER TABLE product_reminders ADD COLUMN reminder_mode TEXT DEFAULT 'once' CHECK (reminder_mode IN ('once', 'recurring'))").run();
         console.log('✅ Added reminder_mode column to product_reminders');
+      }
+
+      if (!hasInstanceName) {
+        db.prepare("ALTER TABLE product_reminders ADD COLUMN instance_name TEXT").run();
+        console.log('✅ Added instance_name column to product_reminders');
       }
     } else {
       db.prepare(`

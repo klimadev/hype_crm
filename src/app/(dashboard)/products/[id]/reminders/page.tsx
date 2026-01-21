@@ -16,6 +16,8 @@ import {
   RefreshCw,
   History,
   AlertCircle,
+  MessageCircle,
+  Smartphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductReminder, ReminderLog } from '@/types';
@@ -24,6 +26,13 @@ interface Stage {
   id: number;
   name: string;
   color: string;
+}
+
+interface Instance {
+  name: string;
+  profileName?: string;
+  ownerJid?: string;
+  connectionStatus: string;
 }
 
 interface ReminderStats {
@@ -36,6 +45,8 @@ interface ReminderStats {
     message_preview: string;
   } | null;
 }
+
+type TabType = 'reminders' | 'instances';
 
 const DELAY_OPTIONS = [
   { value: 1, unit: 'minute' },
@@ -66,7 +77,9 @@ export default function ProductRemindersPage() {
 
   const [reminders, setReminders] = useState<ProductReminder[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [instances, setInstances] = useState<Instance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('reminders');
   const [showForm, setShowForm] = useState(false);
   const [editingReminder, setEditingReminder] = useState<ProductReminder | null>(null);
   const [stats, setStats] = useState<ReminderStats | null>(null);
@@ -77,6 +90,7 @@ export default function ProductRemindersPage() {
     delay_value: '1',
     delay_unit: 'day',
     reminder_mode: 'once' as 'once' | 'recurring',
+    instance_name: '',
     message: '',
     is_active: true,
   });
@@ -89,20 +103,23 @@ export default function ProductRemindersPage() {
 
   const fetchData = async () => {
     try {
-      const [remindersRes, stagesRes, statusRes] = await Promise.all([
+      const [remindersRes, stagesRes, statusRes, instancesRes] = await Promise.all([
         fetch(`/api/products/${productId}/reminders`),
         fetch('/api/stages'),
         fetch(`/api/products/${productId}/reminders/status`),
+        fetch('/api/instances'),
       ]);
 
       const remindersData = await remindersRes.json();
       const stagesData = await stagesRes.json();
       const statusData = await statusRes.json();
+      const instancesData = await instancesRes.json();
 
       setReminders(remindersData);
       setStages(stagesData);
       setStats(statusData.stats);
       setRecentLogs(statusData.recent_logs || []);
+      setInstances(instancesData);
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
       setError('Erro ao carregar dados.');
@@ -119,6 +136,18 @@ export default function ProductRemindersPage() {
   const getStageColor = (stageId: number) => {
     const stage = stages.find(s => s.id === stageId);
     return stage?.color || '#6366f1';
+  };
+
+  const getInstanceStatus = (instanceName: string | null | undefined) => {
+    if (!instanceName) return null;
+    const instance = instances.find(i => i.name === instanceName);
+    return instance;
+  };
+
+  const isInstanceConnected = (instanceName: string | null | undefined) => {
+    if (!instanceName) return false;
+    const instance = instances.find(i => i.name === instanceName);
+    return instance?.connectionStatus === 'connected';
   };
 
   const getStatusBadge = (status: string) => {
@@ -139,6 +168,18 @@ export default function ProductRemindersPage() {
     setSaving(true);
     setError(null);
 
+    if (!formData.instance_name) {
+      setError('Selecione uma instância do WhatsApp para este lembrete.');
+      setSaving(false);
+      return;
+    }
+
+    if (!isInstanceConnected(formData.instance_name)) {
+      setError('A instância selecionada não está conectada. Escolha uma instância conectada.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const method = editingReminder ? 'PUT' : 'POST';
       const url = editingReminder
@@ -153,6 +194,7 @@ export default function ProductRemindersPage() {
           delay_value: parseInt(formData.delay_value),
           delay_unit: formData.delay_unit,
           reminder_mode: formData.reminder_mode,
+          instance_name: formData.instance_name,
           message: formData.message,
           is_active: formData.is_active,
         }),
@@ -180,6 +222,7 @@ export default function ProductRemindersPage() {
       delay_value: reminder.delay_value.toString(),
       delay_unit: reminder.delay_unit,
       reminder_mode: reminder.reminder_mode as 'once' | 'recurring',
+      instance_name: reminder.instance_name || '',
       message: reminder.message,
       is_active: Boolean(reminder.is_active),
     });
@@ -240,6 +283,7 @@ export default function ProductRemindersPage() {
       delay_value: '1',
       delay_unit: 'day',
       reminder_mode: 'once',
+      instance_name: '',
       message: '',
       is_active: true,
     });
@@ -249,6 +293,8 @@ export default function ProductRemindersPage() {
     setShowForm(false);
     resetForm();
   };
+
+  const connectedInstances = instances.filter(i => i.connectionStatus === 'connected');
 
   if (loading) {
     return (
@@ -289,7 +335,7 @@ export default function ProductRemindersPage() {
             <RefreshCw className="w-4 h-4" />
             Testar Job
           </button>
-          {!showForm && (
+          {!showForm && activeTab === 'reminders' && (
             <button
               onClick={() => setShowForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -311,7 +357,32 @@ export default function ProductRemindersPage() {
         </p>
       </motion.div>
 
-      {stats && (
+      <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => { setActiveTab('reminders'); setShowForm(false); resetForm(); }}
+          className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            activeTab === 'reminders'
+              ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+          }`}
+        >
+          <Bell className="w-4 h-4" />
+          Lembretes
+        </button>
+        <button
+          onClick={() => { setActiveTab('instances'); setShowForm(false); resetForm(); }}
+          className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            activeTab === 'instances'
+              ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+          }`}
+        >
+          <Smartphone className="w-4 h-4" />
+          Instâncias
+        </button>
+      </div>
+
+      {stats && activeTab === 'reminders' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800/50">
             <div className="flex items-center gap-2">
@@ -340,7 +411,104 @@ export default function ProductRemindersPage() {
       )}
 
       <AnimatePresence mode="wait">
-        {showLogs ? (
+        {activeTab === 'instances' ? (
+          <motion.div
+            key="instances"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-white dark:bg-zinc-900/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800/50"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <MessageCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Instâncias WhatsApp</h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Gerencie as instâncias disponíveis para envio de lembretes
+                </p>
+              </div>
+            </div>
+
+            {instances.length === 0 ? (
+              <div className="text-center py-12">
+                <Smartphone className="w-12 h-12 text-zinc-300 dark:text-zinc-600 mx-auto mb-4" />
+                <p className="text-zinc-500 dark:text-zinc-400">Nenhuma instância disponível</p>
+                <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
+                  Crie instâncias na página de Instances para usar nos lembretes
+                </p>
+                <Link
+                  href="/instances"
+                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  Gerenciar Instâncias
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {instances.map((instance) => (
+                  <div
+                    key={instance.name}
+                    className={`p-4 rounded-xl border transition-all ${
+                      instance.connectionStatus === 'connected'
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/50'
+                        : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          instance.connectionStatus === 'connected'
+                            ? 'bg-green-100 dark:bg-green-900/30'
+                            : 'bg-zinc-100 dark:bg-zinc-700'
+                        }`}>
+                          <MessageCircle className={`w-5 h-5 ${
+                            instance.connectionStatus === 'connected'
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-zinc-400 dark:text-zinc-500'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-zinc-900 dark:text-white">{instance.name}</p>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                            {instance.profileName || 'Sem perfil'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {instance.connectionStatus === 'connected' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Conectado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-full text-xs font-medium">
+                            <XCircle className="w-3 h-3" />
+                            Desconectado
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {instance.ownerJid && (
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
+                        {instance.ownerJid.replace('@s.whatsapp.net', '')}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                <strong>Importante:</strong> Apenas lembretes com instâncias conectadas podem ser ativados.
+                Verifique se a instância está conectada antes de ativar um lembrete.
+              </p>
+            </div>
+          </motion.div>
+        ) : showLogs ? (
           <motion.div
             key="logs"
             initial={{ opacity: 0, y: 20 }}
@@ -492,6 +660,49 @@ export default function ProductRemindersPage() {
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
+                  Instância WhatsApp *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MessageCircle className="h-5 w-5 text-zinc-400" />
+                  </div>
+                  <select
+                    value={formData.instance_name}
+                    onChange={(e) => setFormData({ ...formData, instance_name: e.target.value })}
+                    className={`w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer ${
+                      formData.instance_name && !isInstanceConnected(formData.instance_name)
+                        ? 'border-amber-300 dark:border-amber-600'
+                        : 'border-zinc-200 dark:border-zinc-700'
+                    }`}
+                    required
+                  >
+                    <option value="">Selecione uma instância</option>
+                    {connectedInstances.length > 0 ? (
+                      connectedInstances.map((instance) => (
+                        <option key={instance.name} value={instance.name}>
+                          {instance.name}
+                          {instance.profileName ? ` (${instance.profileName})` : ''} ✓
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>Nenhuma instância conectada</option>
+                    )}
+                  </select>
+                </div>
+                {connectedInstances.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 ml-1">
+                    Nenhuma instância conectada. Conecte uma instância na aba Instâncias ou na página de Instances.
+                  </p>
+                )}
+                {formData.instance_name && !isInstanceConnected(formData.instance_name) && (
+                  <p className="text-xs text-red-500 dark:text-red-400 ml-1">
+                    Esta instância não está conectada. Escolha uma instância conectada.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
                   Mensagem *
                 </label>
                 <div className="relative">
@@ -588,6 +799,9 @@ export default function ProductRemindersPage() {
                         Tempo
                       </th>
                       <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Instância
+                      </th>
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                         Tipo
                       </th>
                       <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -602,75 +816,104 @@ export default function ProductRemindersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                    {reminders.map((reminder) => (
-                      <tr key={reminder.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: getStageColor(reminder.stage_id) }}
-                            />
-                            <span className="font-medium text-zinc-900 dark:text-white">
-                              {getStageName(reminder.stage_id)}
+                    {reminders.map((reminder) => {
+                      const instanceStatus = getInstanceStatus(reminder.instance_name);
+                      const connected = isInstanceConnected(reminder.instance_name);
+                      return (
+                        <tr key={reminder.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: getStageColor(reminder.stage_id) }}
+                              />
+                              <span className="font-medium text-zinc-900 dark:text-white">
+                                {getStageName(reminder.stage_id)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-zinc-700 dark:text-zinc-300">
+                              {formatDelay(reminder.delay_value, reminder.delay_unit)}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-zinc-700 dark:text-zinc-300">
-                            {formatDelay(reminder.delay_value, reminder.delay_unit)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          {reminder.reminder_mode === 'recurring' ? (
-                            <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 text-sm">
-                              <RefreshCw className="w-4 h-4" />
-                              Recorrente
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-400 text-sm">
-                              <Bell className="w-4 h-4" />
-                              Único
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {reminder.is_active ? (
-                            <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                              <CheckCircle2 className="w-4 h-4" />
-                              Ativo
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-zinc-400 dark:text-zinc-500 text-sm">
-                              <XCircle className="w-4 h-4" />
-                              Inativo
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md truncate">
-                            {reminder.message}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleEdit(reminder)}
-                              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-                              title="Editar"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(reminder.id)}
-                              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-zinc-500 hover:text-red-600"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4">
+                            {reminder.instance_name ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                                  {reminder.instance_name}
+                                </span>
+                                {connected ? (
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                ) : (
+                                  <span title="Instância desconectada">
+                                    <XCircle className="w-4 h-4 text-red-500" />
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-zinc-400 dark:text-zinc-500">
+                                Não configurada
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {reminder.reminder_mode === 'recurring' ? (
+                              <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 text-sm">
+                                <RefreshCw className="w-4 h-4" />
+                                Recorrente
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-400 text-sm">
+                                <Bell className="w-4 h-4" />
+                                Único
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {reminder.is_active && reminder.instance_name && connected ? (
+                              <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Ativo
+                              </span>
+                            ) : reminder.is_active && reminder.instance_name && !connected ? (
+                              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 text-sm" title="Instância desconectada">
+                                <AlertCircle className="w-4 h-4" />
+                                Instância off
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-zinc-400 dark:text-zinc-500 text-sm">
+                                <XCircle className="w-4 h-4" />
+                                Inativo
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md truncate">
+                              {reminder.message}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleEdit(reminder)}
+                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                                title="Editar"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(reminder.id)}
+                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-zinc-500 hover:text-red-600"
+                                title="Excluir"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

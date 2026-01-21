@@ -8,8 +8,8 @@ export async function PUT(
 ) {
   try {
     const { id, reminderId } = await params;
-    const body: UpdateReminderData = await request.json();
-    const { stage_id, delay_value, delay_unit, reminder_mode, message, is_active } = body;
+    const body = await request.json();
+    const { stage_id, delay_value, delay_unit, reminder_mode, message, is_active, instance_name } = body;
 
     const existingReminder = await getOne<ProductReminder>(
       `SELECT pr.*, s.name as stage_name
@@ -31,7 +31,7 @@ export async function PUT(
     }
 
     await run(
-      `UPDATE product_reminders SET stage_id = ?, delay_value = ?, delay_unit = ?, reminder_mode = ?, message = ?, is_active = ? WHERE id = ?`,
+      `UPDATE product_reminders SET stage_id = ?, delay_value = ?, delay_unit = ?, reminder_mode = ?, message = ?, is_active = ?, instance_name = ? WHERE id = ?`,
       [
         stage_id ?? existingReminder.stage_id,
         delay_value ?? existingReminder.delay_value,
@@ -39,6 +39,7 @@ export async function PUT(
         reminder_mode ?? existingReminder.reminder_mode,
         message ?? existingReminder.message,
         is_active !== undefined ? (is_active ? 1 : 0) : existingReminder.is_active,
+        instance_name !== undefined ? instance_name : existingReminder.instance_name,
         parseInt(reminderId)
       ]
     );

@@ -29,8 +29,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const body: CreateReminderData = await request.json();
-    const { stage_id, delay_value, delay_unit, reminder_mode, message, is_active } = body;
+    const body = await request.json();
+    const { stage_id, delay_value, delay_unit, reminder_mode, message, is_active, instance_name } = body;
 
     if (!stage_id || !delay_value || !delay_unit || !message) {
       return NextResponse.json({ error: 'stage_id, delay_value, delay_unit, and message are required' }, { status: 400 });
@@ -47,8 +47,8 @@ export async function POST(
     }
 
     const result = await run(
-      `INSERT INTO product_reminders (product_id, stage_id, delay_value, delay_unit, reminder_mode, message, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [parseInt(id), stage_id, delay_value, delay_unit, reminder_mode || 'once', message, is_active !== false ? 1 : 0]
+      `INSERT INTO product_reminders (product_id, stage_id, delay_value, delay_unit, reminder_mode, instance_name, message, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [parseInt(id), stage_id, delay_value, delay_unit, reminder_mode || 'once', instance_name, message, is_active !== false ? 1 : 0]
     );
 
     const reminder = await getOne<ProductReminder>(`

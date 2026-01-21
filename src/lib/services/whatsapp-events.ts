@@ -56,9 +56,10 @@ export async function handleStageEntry(leadId: number, stageId: number): Promise
     delay_value: number;
     delay_unit: string;
     reminder_mode: string;
+    instance_name: string | null;
     message: string;
   }>(`
-    SELECT pr.id, pr.product_id, pr.delay_value, pr.delay_unit, pr.reminder_mode, pr.message
+    SELECT pr.id, pr.product_id, pr.delay_value, pr.delay_unit, pr.reminder_mode, pr.instance_name, pr.message
     FROM product_reminders pr
     INNER JOIN leads l ON l.product_id = pr.product_id
     WHERE pr.stage_id = ?

@@ -6,14 +6,10 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Package,
-  Tag,
-  DollarSign,
-  FileText,
   Edit,
   Bell,
   CheckCircle2,
   RefreshCw,
-  MessageCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -25,7 +21,6 @@ interface Product {
   type: 'product' | 'service';
   recurrence_type: 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
   recurrence_days: number | null;
-  instance_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -254,45 +249,6 @@ export default function ProductDetailPage() {
                 Última atualização em {formatDate(product.updated_at)}
               </p>
             </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-zinc-900/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800/50"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                WhatsApp
-              </span>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                Instância para envio
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                Instância
-              </label>
-              <p className="text-lg font-semibold text-zinc-900 dark:text-white">
-                {product.instance_name || 'teste2'}
-                <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
-                  ✓
-                </span>
-              </p>
-            </div>
-
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Esta instância do WhatsApp será usada para enviar mensagensautomáticas relacionadas a este produto.
-            </p>
           </div>
         </motion.div>
       </div>

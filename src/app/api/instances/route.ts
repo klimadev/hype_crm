@@ -16,7 +16,7 @@ export async function GET() {
       .map((inst) => ({
         name: inst.name,
         number: inst.ownerJid ? inst.ownerJid.replace('@s.whatsapp.net', '') : inst.number,
-        status: mapConnectionStatus(inst.connectionStatus),
+        connectionStatus: mapConnectionStatus(inst.connectionStatus),
         integration: inst.integration,
         profileName: inst.profileName,
         ownerJid: inst.ownerJid,

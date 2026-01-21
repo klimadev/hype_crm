@@ -64,6 +64,7 @@ export interface ProductReminder {
   delay_value: number;
   delay_unit: DelayUnit;
   reminder_mode: ReminderMode;
+  instance_name: string | null;
   message: string;
   is_active: number;
   created_at: string;
@@ -74,6 +75,7 @@ export interface CreateReminderData {
   delay_value: number;
   delay_unit: DelayUnit;
   reminder_mode: ReminderMode;
+  instance_name?: string;
   message: string;
   is_active?: boolean;
 }
@@ -83,6 +85,7 @@ export interface UpdateReminderData {
   delay_value?: number;
   delay_unit?: DelayUnit;
   reminder_mode?: ReminderMode;
+  instance_name?: string;
   message?: string;
   is_active?: boolean;
 }

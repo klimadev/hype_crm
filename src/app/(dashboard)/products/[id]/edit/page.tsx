@@ -13,7 +13,6 @@ import {
   Trash2,
   AlertCircle,
   RefreshCw,
-  MessageCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -23,14 +22,6 @@ interface ProductFormData {
   price: string;
   type: 'product' | 'service';
   recurrence_type: string;
-  instance_name: string;
-}
-
-interface Instance {
-  name: string;
-  profileName?: string;
-  ownerJid?: string;
-  connectionStatus: string;
 }
 
 const RECURRENCE_OPTIONS = [
@@ -64,33 +55,15 @@ export default function EditProductPage() {
     price: '',
     type: 'product',
     recurrence_type: 'none',
-    instance_name: 'teste2',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [instances, setInstances] = useState<Instance[]>([]);
-  const [loadingInstances, setLoadingInstances] = useState(true);
 
   useEffect(() => {
     fetchProduct();
-    fetchInstances();
   }, [productId]);
-
-  const fetchInstances = async () => {
-    try {
-      const res = await fetch('/api/instances');
-      if (res.ok) {
-        const data = await res.json();
-        setInstances(data);
-      }
-    } catch (err) {
-      console.error('Error fetching instances:', err);
-    } finally {
-      setLoadingInstances(false);
-    }
-  };
 
   const fetchProduct = async () => {
     try {
@@ -109,7 +82,6 @@ export default function EditProductPage() {
         price: product.price?.toString() || '',
         type: product.type || 'product',
         recurrence_type: product.recurrence_type || 'none',
-        instance_name: product.instance_name || 'teste2',
       });
     } catch (err) {
       console.error('Error fetching product:', err);
@@ -134,7 +106,6 @@ export default function EditProductPage() {
           price: parseFloat(formData.price) || 0,
           type: formData.type,
           recurrence_type: formData.recurrence_type,
-          instance_name: formData.instance_name,
         }),
       });
 
@@ -343,39 +314,6 @@ export default function EditProductPage() {
               ))}
             </select>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-            Instância WhatsApp
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MessageCircle className="h-5 w-5 text-zinc-400" />
-            </div>
-            <select
-              value={formData.instance_name}
-              onChange={(e) => setFormData({ ...formData, instance_name: e.target.value })}
-              className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 appearance-none cursor-pointer"
-            >
-              {loadingInstances ? (
-                <option value="">Carregando...</option>
-              ) : instances.length > 0 ? (
-                instances.map((instance) => (
-                  <option key={instance.name} value={instance.name}>
-                    {instance.name}
-                    {instance.profileName ? ` (${instance.profileName})` : ''}
-                    {instance.connectionStatus === 'connected' ? ' ✓' : ''}
-                  </option>
-                ))
-              ) : (
-                <option value="teste2">teste2 (padrão)</option>
-              )}
-            </select>
-          </div>
-          <p className="text-xs text-zinc-500 ml-1">
-            Instância do WhatsApp usada para enviar mensagens deste produto
-          </p>
         </div>
 
         <div className="flex gap-3 pt-2">
