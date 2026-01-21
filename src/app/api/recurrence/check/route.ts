@@ -113,10 +113,12 @@ export async function GET(request: NextRequest) {
           console.log(`[MOCK] 📱 WhatsApp enviado para ${reminder.lead_phone}: "${message.substring(0, 50)}..."`);
           sent = true;
         } else {
-          sent = await sendWhatsAppMessage({
+          const result = await sendWhatsAppMessage({
+            instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
             phone: reminder.lead_phone,
             message,
           });
+          sent = result.success;
         }
 
         if (sent) {

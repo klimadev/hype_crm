@@ -176,16 +176,17 @@ async function processEvent(event: WhatsAppEvent, leadId: number): Promise<void>
     await recordSentMessage(leadId, event.id);
     console.log(`[MOCK] ✅ Mensagem mockada registrada para lead ${leadId}`);
   } else {
-    const success = await sendWhatsAppMessage({
+    const result = await sendWhatsAppMessage({
+      instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
       phone: lead.phone,
       message,
     });
 
-    if (success) {
+    if (result.success) {
       await recordSentMessage(leadId, event.id);
       console.log(`[WhatsApp Events] ✅ WhatsApp message sent to ${lead.phone} for event "${event.name}"`);
     } else {
-      console.error(`[WhatsApp Events] ❌ Failed to send WhatsApp message for event "${event.name}" to ${lead.phone}`);
+      console.error(`[WhatsApp Events] ❌ Failed to send WhatsApp message for event "${event.name}" to ${lead.phone}: ${result.error}`);
     }
   }
 }

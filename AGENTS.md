@@ -168,3 +168,62 @@ src/
 2. Make changes following these guidelines
 3. Run `npm run lint` && `npm run build`
 4. Commit with conventional messages (`feat:`, `fix:`, etc.)
+
+## Evolution API Integration
+
+### Environment Variables
+
+```env
+EVOLUTION_API_URL=http://localhost:8080      # Evolution API server URL
+EVOLUTION_API_KEY=your-api-key               # Instance or global API key
+EVOLUTION_INSTANCE_NAME=default              # Instance name for sending messages
+```
+
+### API Endpoints (Evolution API 2.3+)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/instance/create` | Create new instance |
+| GET | `/instance/fetchInstances` | List all instances |
+| GET | `/instance/connect/{instance}` | Connect/start instance |
+| GET | `/instance/connectionState/{instance}` | Get connection status |
+| GET | `/instance/qrcode/{instance}` | Get QR code for pairing |
+| DELETE | `/instance/logout/{instance}` | Logout without deleting |
+| DELETE | `/instance/delete/{instance}` | Delete instance |
+| POST | `/message/sendText/{instance}` | Send text message |
+
+### Status States
+
+- `created` - Instance created, waiting for connection
+- `connecting` - Connecting to WhatsApp
+- `connected` - Successfully connected
+- `disconnected` - Connection lost
+- `qrcode` - Waiting for QR scan
+
+### Client Usage
+
+```typescript
+import { sendWhatsAppMessage } from '@/lib/whatsapp/client';
+
+const result = await sendWhatsAppMessage({
+  instanceName: 'my-bot',      // or use EVOLUTION_INSTANCE_NAME env
+  phone: '+5511999999999',
+  message: 'Hello!',
+  presence: 'composing',       // optional: show "typing"
+});
+
+if (result.success) {
+  console.log('Message sent:', result.messageId);
+} else {
+  console.error('Failed:', result.error);
+}
+```
+
+### Instance Management Flow
+
+1. User creates instance → `POST /instance/create`
+2. User scans QR code → `GET /instance/qrcode/{instance}`
+3. Poll status until `connected` → `GET /instance/connectionState/{instance}`
+4. Send messages → `POST /message/sendText/{instance}`
+5. Logout (keep instance) → `DELETE /instance/logout/{instance}`
+6. Delete completely → `DELETE /instance/delete/{instance}`

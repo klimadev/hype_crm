@@ -1,36 +1,31 @@
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8888';
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
+import { sendTextMessage } from '@/lib/evolution/client';
 
-interface SendMessageRequest {
+export interface SendMessageRequest {
+  instanceName: string;
   phone: string;
   message: string;
+  presence?: 'composing' | 'recording';
 }
 
-export async function sendWhatsAppMessage({ phone, message }: SendMessageRequest): Promise<boolean> {
+export async function sendWhatsAppMessage({
+  instanceName,
+  phone,
+  message,
+  presence,
+}: SendMessageRequest): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const cleanedPhone = phone.replace(/\D/g, '');
-    
-    const response = await fetch(`${EVOLUTION_API_URL}/message/sendText/default`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': EVOLUTION_API_KEY,
-      },
-      body: JSON.stringify({
-        phone: cleanedPhone,
-        text: message,
-      }),
-    });
+    const response = await sendTextMessage(instanceName, { phone, message, presence });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`EvolutionAPI error: ${response.status} - ${errorText}`);
-      return false;
-    }
-
-    return true;
+    return {
+      success: true,
+      messageId: response.key?.id,
+    };
   } catch (error) {
     console.error('Error sending WhatsApp message:', error);
-    return false;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return {
+      success: false,
+      error: errorMessage,
+    };
   }
 }

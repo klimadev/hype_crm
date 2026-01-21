@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   KanbanSquare,
   Package,
+  Smartphone,
   LogOut,
   Menu,
   User,
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard', iconBg: 'group-hover:bg-zinc-900 dark:group-hover:bg-zinc-100' },
   { href: '/kanban', icon: KanbanSquare, label: 'Kanban', iconBg: 'group-hover:bg-indigo-600' },
   { href: '/products', icon: Package, label: 'Produtos', iconBg: 'group-hover:bg-emerald-600' },
+  { href: '/instances', icon: Smartphone, label: 'Instâncias', iconBg: 'group-hover:bg-green-600' },
 ];
 
 interface User {
