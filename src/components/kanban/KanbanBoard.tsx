@@ -54,6 +54,7 @@ function StageColumn({
   activeDragId,
   onDragEnd,
   onDeleteLead,
+  onAddLead,
 }: {
   stage: Stage;
   stageLeads: Lead[];
@@ -63,6 +64,7 @@ function StageColumn({
   activeDragId: number | null;
   onDragEnd: () => void;
   onDeleteLead: (leadId: number) => void;
+  onAddLead: (stageId: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: stage.id,
@@ -187,6 +189,7 @@ function StageColumn({
         <motion.button
           whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,0,0,0.04)' }}
           whileTap={{ scale: 0.98 }}
+          onClick={() => onAddLead(stage.id)}
           className="w-full mt-4 py-3 flex items-center justify-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-100/50 dark:bg-zinc-800/30 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all font-medium"
         >
           <Plus className="w-4 h-4" />
@@ -841,6 +844,7 @@ export default function KanbanBoard() {
               activeDragId={activeDragId}
               onDragEnd={handleDragCancel}
               onDeleteLead={handleDeleteLead}
+              onAddLead={handleAddLeadToStage}
             />
             ))}
           </AnimatePresence>

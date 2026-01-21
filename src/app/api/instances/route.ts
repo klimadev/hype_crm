@@ -1,27 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createInstance, listInstances, InstanceListItem } from '@/lib/evolution/client';
+import { createInstance, listInstances, InstanceListItem, getInstanceStatus } from '@/lib/evolution/client';
 
 export async function GET() {
   try {
     const instances = await listInstances();
     
-    const formattedInstances = instances
-      .filter((inst): inst is InstanceListItem => 
-        inst !== null && 
-        inst !== undefined && 
-        inst.name !== undefined && 
-        inst.name !== null &&
-        typeof inst.name === 'string'
-      )
-      .map((inst) => ({
-        name: inst.name,
-        number: inst.ownerJid ? inst.ownerJid.replace('@s.whatsapp.net', '') : inst.number,
-        connectionStatus: mapConnectionStatus(inst.connectionStatus),
-        integration: inst.integration,
-        profileName: inst.profileName,
-        ownerJid: inst.ownerJid,
-        profilePicUrl: inst.profilePicUrl,
-      }));
+    const formattedInstances = await Promise.all(
+      instances
+        .filter((inst): inst is InstanceListItem => 
+          inst !== null && 
+          inst !== undefined && 
+          inst.name !== undefined && 
+          inst.name !== null &&
+          typeof inst.name === 'string'
+        )
+        .map(async (inst) => {
+          let connectionStatus = mapConnectionStatus(inst.connectionStatus);
+          
+          if (!inst.connectionStatus || connectionStatus === 'created') {
+            console.log(`[instances] Fetching individual status for ${inst.name}, current: ${inst.connectionStatus}`);
+            const individualStatus = await getInstanceStatus(inst.name);
+            if (individualStatus) {
+              const mappedStatus = mapConnectionStatus(individualStatus);
+              console.log(`[instances] Individual status for ${inst.name}: ${individualStatus} -> ${mappedStatus}`);
+              connectionStatus = mappedStatus;
+            } else {
+              console.log(`[instances] Failed to get individual status for ${inst.name}`);
+            }
+          }
+          
+          return {
+            name: inst.name,
+            number: inst.ownerJid ? inst.ownerJid.replace('@s.whatsapp.net', '') : inst.number,
+            status: connectionStatus,
+            connectionStatus,
+            integration: inst.integration,
+            profileName: inst.profileName,
+            ownerJid: inst.ownerJid,
+            profilePicUrl: inst.profilePicUrl,
+          };
+        })
+    );
     
     return NextResponse.json(formattedInstances);
   } catch (error) {
@@ -55,6 +74,7 @@ export async function POST(request: NextRequest) {
       name: result.instance.instanceName,
       number: result.instance.number,
       status: 'qrcode',
+      connectionStatus: 'qrcode',
       integration: result.instance.integration,
       qrcode: result.qrcode?.base64,
     }, { status: 201 });
@@ -77,7 +97,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function mapStatus(status: string): 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode' {
+function mapStatus(status: string | null | undefined): 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode' {
+  if (!status) {
+    console.log('[instances] Status is null/undefined, fetching individual status...');
+    return 'created';
+  }
+  
   const statusMap: Record<string, 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode'> = {
     'created': 'created',
     'connecting': 'connecting',
@@ -88,9 +113,13 @@ function mapStatus(status: string): 'created' | 'connecting' | 'connected' | 'di
     'qrcode': 'qrcode',
   };
   
-  return statusMap[status.toLowerCase()] || 'created';
+  const mapped = statusMap[status.toLowerCase()];
+  if (!mapped) {
+    console.log(`[instances] Unknown status: ${status}, defaulting to 'created'`);
+  }
+  return mapped || 'created';
 }
 
-function mapConnectionStatus(status: string): 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode' {
+function mapConnectionStatus(status: string | null | undefined): 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode' {
   return mapStatus(status);
 }

@@ -167,6 +167,27 @@ export async function listInstances(): Promise<InstanceListItem[]> {
   return evolutionFetch<InstanceListItem[]>('/instance/fetchInstances');
 }
 
+export async function getInstanceStatus(instanceName: string): Promise<string | null> {
+  try {
+    console.log(`[evolution] Getting status for ${instanceName} via connectionState`);
+    const response = await evolutionFetch<{ instance?: { state: string } }>(`/instance/connectionState/${instanceName}`);
+    const status = response.instance?.state || null;
+    console.log(`[evolution] Status for ${instanceName}: ${status}`);
+    return status;
+  } catch (error) {
+    console.log(`[evolution] connectionState failed for ${instanceName}, trying connect endpoint`);
+    try {
+      const response = await evolutionFetch<{ instance?: { state: string } }>(`/instance/connect/${instanceName}`);
+      const status = response.instance?.state || null;
+      console.log(`[evolution] Status via connect for ${instanceName}: ${status}`);
+      return status;
+    } catch {
+      console.log(`[evolution] Both endpoints failed for ${instanceName}`);
+      return null;
+    }
+  }
+}
+
 export async function getInstance(instanceName: string): Promise<InstanceListItem | null> {
   try {
     const instances = await listInstances();

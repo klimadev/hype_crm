@@ -22,7 +22,7 @@ interface InstanceCardProps {
 export function InstanceCard({ instance, onRefresh, onDelete, onShowQr }: InstanceCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const statusConfig = getStatusConfig(instance.status);
+  const statusConfig = getStatusConfig(instance.connectionStatus || 'created');
   
   async function handleDelete() {
     if (!confirm(`Tem certeza que deseja excluir a instância "${instance.name}"?`)) {
@@ -38,34 +38,48 @@ export function InstanceCard({ instance, onRefresh, onDelete, onShowQr }: Instan
   }
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-full ${statusConfig.bgColor}`}>
+          <div className={`p-2.5 rounded-full ${statusConfig.bgColor}`}>
             <statusConfig.icon className={`w-5 h-5 ${statusConfig.color}`} />
           </div>
           <div>
-            <h3 className="font-medium text-gray-900 dark:text-white">
-              {instance.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {instance.name}
+              </h3>
+          {instance.connectionStatus === 'connected' && (
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          )}
+            </div>
             {instance.profileName && (
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 {instance.profileName}
               </p>
             )}
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
               {instance.number || 'Sem número'}
             </p>
           </div>
         </div>
-        
-        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig.badgeColor}`}>
+
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig.badgeColor}`}>
+          <statusConfig.icon className="w-3 h-3" />
           {statusConfig.label}
         </span>
       </div>
-      
+
+      {instance.ownerJid && (
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+            {instance.ownerJid.replace('@s.whatsapp.net', '')}
+          </p>
+        </div>
+      )}
+
       <div className="mt-4 flex items-center gap-2">
-        {instance.status === 'qrcode' && (
+        {instance.connectionStatus === 'qrcode' && (
           <button
             onClick={() => onShowQr(instance)}
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
@@ -74,8 +88,8 @@ export function InstanceCard({ instance, onRefresh, onDelete, onShowQr }: Instan
             Ver QR Code
           </button>
         )}
-        
-        {instance.status === 'disconnected' && (
+
+        {instance.connectionStatus === 'disconnected' && (
           <button
             onClick={onRefresh}
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
@@ -84,7 +98,7 @@ export function InstanceCard({ instance, onRefresh, onDelete, onShowQr }: Instan
             Reconectar
           </button>
         )}
-        
+
         <button
           onClick={handleDelete}
           disabled={isDeleting}

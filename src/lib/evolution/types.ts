@@ -36,6 +36,7 @@ export interface EvolutionInstance {
   name: string;
   number?: string | null;
   status: 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode';
+  connectionStatus: 'created' | 'connecting' | 'connected' | 'disconnected' | 'qrcode';
   integration: string;
   connectionState?: 'open' | 'close' | 'connecting' | 'disconnected';
   qrcode?: string;

@@ -66,6 +66,7 @@ export default function InstancesPage() {
           name: result.name,
           number: result.number,
           status: result.status,
+          connectionStatus: result.connectionStatus || result.status,
           integration: result.integration,
           qrcode: result.qrcode,
         });
