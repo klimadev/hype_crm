@@ -27,8 +27,63 @@ export interface Product {
   description: string | null;
   price: number;
   type: 'product' | 'service';
+  recurrence_type: RecurrenceType;
   created_at: string;
   updated_at: string;
+}
+
+export type RecurrenceType = 
+  | 'none' 
+  | 'minute_30' 
+  | 'hour_1' 
+  | 'hour_2' 
+  | 'hour_4' 
+  | 'hour_8' 
+  | 'day_1' 
+  | 'day_3' 
+  | 'day_7' 
+  | 'day_15' 
+  | 'day_30' 
+  | 'day_60' 
+  | 'day_90' 
+  | 'month_1' 
+  | 'month_2' 
+  | 'month_3' 
+  | 'month_6';
+
+export type DelayUnit = 'minute' | 'hour' | 'day' | 'week' | 'month';
+
+export type ReminderMode = 'once' | 'recurring';
+
+export interface ProductReminder {
+  id: number;
+  product_id: number;
+  stage_id: number;
+  stage_name: string | null;
+  delay_value: number;
+  delay_unit: DelayUnit;
+  reminder_mode: ReminderMode;
+  message: string;
+  is_active: number;
+  created_at: string;
+}
+
+export interface CreateReminderData {
+  stage_id: number;
+  delay_value: number;
+  delay_unit: DelayUnit;
+  reminder_mode: ReminderMode;
+  message: string;
+  is_active?: boolean;
+}
+
+export interface UpdateReminderData {
+  stage_id?: number;
+  delay_value?: number;
+  delay_unit?: DelayUnit;
+  reminder_mode?: ReminderMode;
+  message?: string;
+  is_active?: boolean;
 }
 
 export interface KanbanCardProps {
@@ -91,6 +146,33 @@ export interface UpdateStageData {
   name?: string;
   color?: string;
   position?: number;
+}
+
+export interface ReminderLog {
+  id: number;
+  lead_id: number;
+  product_id: number;
+  reminder_id: number;
+  scheduled_at: string;
+  sent_at: string | null;
+  status: 'pending' | 'sent' | 'failed' | 'cancelled';
+  message_preview: string | null;
+  next_scheduled_at: string | null;
+  error: string | null;
+  created_at: string;
+  lead_name?: string;
+  product_name?: string;
+}
+
+export interface ReminderStats {
+  pending: number;
+  sent_today: number;
+  next_reminder: {
+    lead_name: string;
+    product_name: string;
+    time_remaining: string;
+    message_preview: string;
+  } | null;
 }
 
 export const LEAD_STATUS = {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import { run, getOne, query } from '@/lib/db';
+import { run, getOne } from '@/lib/db';
+import { handleStageEntry } from '@/lib/services/whatsapp-events';
 
 async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
   await run('BEGIN TRANSACTION');
@@ -99,23 +100,19 @@ export async function PUT(
           [parseInt(id), stage_id]
         );
       });
+
+      console.log(`[Leads] 🎯 Calling handleStageEntry directly for lead ${id} -> stage ${stage_id}`);
+      try {
+        await handleStageEntry(parseInt(id), stage_id);
+        console.log(`[Leads] ✅ handleStageEntry completed successfully`);
+      } catch (error) {
+        console.error(`[Leads] ❌ handleStageEntry failed:`, error);
+      }
     } else {
       await run(
         `UPDATE leads SET name = ?, phone = ?, email = ?, product_id = ?, stage_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [updatedName, updatedPhone, updatedEmail, updatedProductId, updatedStageId, parseInt(id)]
       );
-    }
-
-    if (needsHistoryUpdate) {
-      const whatsappTriggerRes = await fetch(`${request.nextUrl.origin}/api/whatsapp-events/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: parseInt(id), stageId: stage_id }),
-      });
-
-      if (!whatsappTriggerRes.ok) {
-        console.error('WhatsApp trigger failed:', await whatsappTriggerRes.text());
-      }
     }
 
     const lead = await getOne(`

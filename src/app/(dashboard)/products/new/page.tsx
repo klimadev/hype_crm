@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,13 +11,16 @@ import {
   DollarSign,
   FileText,
   Save,
+  RefreshCw,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ProductFormData {
   name: string;
   description: string;
   price: string;
   type: 'product' | 'service';
+  recurrence_type: string;
 }
 
 const initialFormData: ProductFormData = {
@@ -25,7 +28,28 @@ const initialFormData: ProductFormData = {
   description: '',
   price: '',
   type: 'product',
+  recurrence_type: 'none',
 };
+
+const RECURRENCE_OPTIONS = [
+  { value: 'none', label: 'Sem recorrência' },
+  { value: 'minute_30', label: 'A cada 30 minutos' },
+  { value: 'hour_1', label: 'A cada 1 hora' },
+  { value: 'hour_2', label: 'A cada 2 horas' },
+  { value: 'hour_4', label: 'A cada 4 horas' },
+  { value: 'hour_8', label: 'A cada 8 horas' },
+  { value: 'day_1', label: 'Diário (1 dia)' },
+  { value: 'day_3', label: 'A cada 3 dias' },
+  { value: 'day_7', label: 'Semanal (7 dias)' },
+  { value: 'day_15', label: 'A cada 15 dias' },
+  { value: 'day_30', label: 'Mensal (30 dias)' },
+  { value: 'day_60', label: 'A cada 60 dias' },
+  { value: 'day_90', label: 'A cada 90 dias' },
+  { value: 'month_1', label: 'Mensal (1 mês)' },
+  { value: 'month_2', label: 'A cada 2 meses' },
+  { value: 'month_3', label: 'A cada 3 meses' },
+  { value: 'month_6', label: 'A cada 6 meses' },
+];
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -44,8 +68,11 @@ export default function NewProductPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          name: formData.name,
+          description: formData.description,
           price: parseFloat(formData.price) || 0,
+          type: formData.type,
+          recurrence_type: formData.recurrence_type,
         }),
       });
 
@@ -180,6 +207,28 @@ export default function NewProductPage() {
           </div>
         </div>
 
+        <div className="space-y-1.5">
+          <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
+            Recorrência
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <RefreshCw className="h-5 w-5 text-zinc-400" />
+            </div>
+            <select
+              value={formData.recurrence_type}
+              onChange={(e) => setFormData({ ...formData, recurrence_type: e.target.value })}
+              className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 appearance-none cursor-pointer"
+            >
+              {RECURRENCE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="flex gap-3 pt-2">
           <Link
             href="/products"
@@ -206,5 +255,3 @@ export default function NewProductPage() {
     </div>
   );
 }
-
-import { motion } from 'framer-motion';

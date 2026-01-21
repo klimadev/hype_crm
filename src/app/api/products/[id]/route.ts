@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { run, getOne } from '@/lib/db';
+import { Product } from '@/types';
 
 export async function GET(
   request: NextRequest,
@@ -26,16 +27,23 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { name, description, price, type } = await request.json();
+    const { name, description, price, type, recurrence_type } = await request.json();
 
-    const existingProduct = await getOne('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
+    const existingProduct = await getOne<Product>('SELECT * FROM products WHERE id = ?', [parseInt(id)]);
     if (!existingProduct) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     await run(
-      `UPDATE products SET name = ?, description = ?, price = ?, type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [name, description || null, price || 0, type, parseInt(id)]
+      `UPDATE products SET name = ?, description = ?, price = ?, type = ?, recurrence_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [
+        name ?? existingProduct.name,
+        description ?? existingProduct.description,
+        price ?? existingProduct.price,
+        type ?? existingProduct.type,
+        recurrence_type ?? existingProduct.recurrence_type ?? 'none',
+        parseInt(id)
+      ]
     );
 
     const product = await getOne('SELECT * FROM products WHERE id = ?', [parseInt(id)]);

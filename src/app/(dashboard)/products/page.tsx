@@ -22,6 +22,7 @@ interface Product {
   description: string | null;
   price: number;
   type: string;
+  recurrence_type: string;
   created_at: string;
 }
 
@@ -139,7 +140,8 @@ export default function ProductsPage() {
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className="group relative bg-white dark:bg-zinc-900/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800/50 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-zinc-950/50 transition-all duration-300"
+              className="group relative bg-white dark:bg-zinc-900/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800/50 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-zinc-950/50 transition-all duration-300 cursor-pointer"
+              onClick={() => window.location.href = `/products/${product.id}`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -175,7 +177,7 @@ export default function ProductsPage() {
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>
                   <Link
                     href={`/products/${product.id}/edit`}
                     className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
@@ -184,7 +186,7 @@ export default function ProductsPage() {
                     <Edit className="w-4 h-4" />
                   </Link>
                   <button
-                    onClick={() => handleDelete(product.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}
                     className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-zinc-500 hover:text-red-600"
                     title="Excluir"
                   >

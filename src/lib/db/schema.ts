@@ -12,8 +12,53 @@ export const CREATE_TABLES_SQL = `
     description TEXT,
     price DECIMAL(10, 2),
     type TEXT NOT NULL CHECK (type IN ('product', 'service')),
+    recurrence_type TEXT DEFAULT 'none' CHECK (recurrence_type IN ('none', 'minute_30', 'hour_1', 'hour_2', 'hour_4', 'hour_8', 'day_1', 'day_3', 'day_7', 'day_15', 'day_30', 'day_60', 'day_90', 'month_1', 'month_2', 'month_3', 'month_6')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS product_reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    stage_id INTEGER NOT NULL,
+    delay_value INTEGER NOT NULL DEFAULT 1,
+    delay_unit TEXT NOT NULL DEFAULT 'day' CHECK (delay_unit IN ('minute', 'hour', 'day', 'week', 'month')),
+    reminder_mode TEXT NOT NULL DEFAULT 'once' CHECK (reminder_mode IN ('once', 'recurring')),
+    message TEXT NOT NULL,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (stage_id) REFERENCES stages(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS lead_recurrence_tracker (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    last_service_date DATETIME,
+    next_reminder_date DATETIME,
+    cycle_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE(lead_id, product_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS reminder_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    reminder_id INTEGER NOT NULL,
+    scheduled_at DATETIME NOT NULL,
+    sent_at DATETIME,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'cancelled')),
+    message_preview TEXT,
+    next_scheduled_at DATETIME,
+    error TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (reminder_id) REFERENCES product_reminders(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS stages (
@@ -82,8 +127,15 @@ export const CREATE_TABLES_SQL = `
   CREATE INDEX IF NOT EXISTS idx_stages_position ON stages(position);
   CREATE INDEX IF NOT EXISTS idx_whatsapp_events_stage_id ON whatsapp_events(stage_id);
   CREATE INDEX IF NOT EXISTS idx_whatsapp_events_product_id ON whatsapp_events(product_id);
-  CREATE INDEX IF NOT EXISTS idx_sent_messages_lead_id ON sent_whatsapp_messages(lead_id);
-  CREATE INDEX IF NOT EXISTS idx_sent_messages_event_id ON sent_whatsapp_messages(event_id);
+  CREATE INDEX IF NOT EXISTS idx_products_recurrence_type ON products(recurrence_type);
+  CREATE INDEX IF NOT EXISTS idx_product_reminders_product_id ON product_reminders(product_id);
+  CREATE INDEX IF NOT EXISTS idx_product_reminders_stage_id ON product_reminders(stage_id);
+  CREATE INDEX IF NOT EXISTS idx_lead_recurrence_tracker_lead_id ON lead_recurrence_tracker(lead_id);
+  CREATE INDEX IF NOT EXISTS idx_lead_recurrence_tracker_product_id ON lead_recurrence_tracker(product_id);
+  CREATE INDEX IF NOT EXISTS idx_lead_recurrence_tracker_next_date ON lead_recurrence_tracker(next_reminder_date);
+  CREATE INDEX IF NOT EXISTS idx_reminder_logs_lead_id ON reminder_logs(lead_id);
+  CREATE INDEX IF NOT EXISTS idx_reminder_logs_status ON reminder_logs(status);
+  CREATE INDEX IF NOT EXISTS idx_reminder_logs_scheduled ON reminder_logs(scheduled_at);
 `;
 
 export const INSERT_DEFAULT_DATA_SQL = `

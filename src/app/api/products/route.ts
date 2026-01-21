@@ -15,15 +15,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, description, price, type } = await request.json();
+    const { name, description, price, type, recurrence_type } = await request.json();
 
     if (!name || !type) {
       return NextResponse.json({ error: 'Name and type are required' }, { status: 400 });
     }
 
     const result = await run(
-      `INSERT INTO products (name, description, price, type) VALUES (?, ?, ?, ?)`,
-      [name, description || null, price || 0, type]
+      `INSERT INTO products (name, description, price, type, recurrence_type) VALUES (?, ?, ?, ?, ?)`,
+      [name, description || null, price || 0, type, recurrence_type || 'none']
     );
 
     const product = await getOne('SELECT * FROM products WHERE id = ?', [result.id]);
