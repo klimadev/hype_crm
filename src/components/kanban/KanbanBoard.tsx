@@ -26,7 +26,6 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import type { Lead, Stage, Product, FilterOptions } from '@/types';
-import StageManager from './StageManager';
 import FilterDropdown from './FilterDropdown';
 import { LoadingScreen } from '@/components/LoadingComponents';
 
@@ -503,7 +502,6 @@ export default function KanbanBoard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showStageManager, setShowStageManager] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>(DEFAULT_FILTERS);
   const [error, setError] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<number | null>(null);
@@ -654,37 +652,6 @@ export default function KanbanBoard() {
     }
   };
 
-  const handleEditStage = () => {
-    setShowStageManager(true);
-  };
-
-  const handleDeleteStage = async (stageId: number) => {
-    try {
-      const res = await fetch(`/api/stages?id=${stageId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete stage');
-      fetchData();
-    } catch (err) {
-      console.error('Erro ao excluir estágio:', err);
-      setError('Erro ao excluir estágio.');
-    }
-  };
-
-  const handleDuplicateStage = async (stage: Stage) => {
-    try {
-      const res = await fetch('/api/stages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: `${stage.name} (cópia)`, color: stage.color }),
-      });
-
-      if (!res.ok) throw new Error('Failed to duplicate stage');
-      fetchData();
-    } catch (err) {
-      console.error('Erro ao duplicar estágio:', err);
-      setError('Erro ao duplicar estágio.');
-    }
-  };
-
   const handleAddLeadToStage = (stageId: number) => {
     const params = new URLSearchParams();
     params.set('stage', stageId.toString());
@@ -728,8 +695,6 @@ export default function KanbanBoard() {
 
   return (
     <div className="space-y-6">
-      <StageManager isOpen={showStageManager} onClose={() => setShowStageManager(false)} onUpdate={fetchData} />
-
       <AnimatePresence>
         {error && (
           <motion.div
@@ -795,15 +760,13 @@ export default function KanbanBoard() {
           transition={{ delay: 0.2 }}
           className="flex gap-2"
         >
-          <motion.button
-            whileHover={{ scale: 1.02, x: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowStageManager(true)}
+          <Link
+            href="/kanban/stages"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl font-medium shadow-sm hover:shadow-md transition-all"
           >
             <Settings2 className="w-5 h-5" />
             Estágios
-          </motion.button>
+          </Link>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Plus,
-  X,
   Search,
   Package,
   Tag,
@@ -12,7 +12,8 @@ import {
   Edit,
   Trash2,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 
 interface Product {
@@ -27,15 +28,7 @@ interface Product {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    type: 'product',
-  });
 
   useEffect(() => {
     fetchProducts();
@@ -53,33 +46,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const url = editingProduct
-      ? `/api/products/${editingProduct.id}`
-      : '/api/products';
-    const method = editingProduct ? 'PUT' : 'POST';
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price) || 0,
-        }),
-      });
-
-      if (res.ok) {
-        fetchProducts();
-        resetForm();
-      }
-    } catch (error) {
-      console.error('Erro ao salvar produto:', error);
-    }
-  };
-
   const handleDelete = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
 
@@ -91,23 +57,6 @@ export default function ProductsPage() {
     } catch (error) {
       console.error('Erro ao excluir produto:', error);
     }
-  };
-
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      description: product.description || '',
-      price: product.price.toString(),
-      type: product.type,
-    });
-    setShowForm(true);
-  };
-
-  const resetForm = () => {
-    setShowForm(false);
-    setEditingProduct(null);
-    setFormData({ name: '', description: '', price: '', type: 'product' });
   };
 
   const filteredProducts = products.filter(product =>
@@ -147,13 +96,13 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">Produtos e Serviços</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">Gerencie seu catálogo de produtos e serviços</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
+        <Link
+          href="/products/new"
           className="inline-flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-zinc-900/20 dark:shadow-zinc-100/10 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
         >
           <Plus className="w-5 h-5" />
           Novo Produto
-        </button>
+        </Link>
       </div>
 
       {/* Search */}
@@ -169,128 +118,6 @@ export default function ProductsPage() {
           className="w-full pl-11 pr-4 py-3 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700/50 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition-all duration-200"
         />
       </div>
-
-      {/* Product Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-6 border-b border-zinc-100 dark:border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${editingProduct ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'}`}>
-                  {editingProduct ? (
-                    <Edit className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  ) : (
-                    <Plus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                    {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-                  </h2>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    {editingProduct ? 'Atualize as informações do produto' : 'Adicione um novo produto ao catálogo'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={resetForm}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-zinc-500" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-                  Nome *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Package className="h-5 w-5 text-zinc-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition-all duration-200"
-                    placeholder="Nome do produto"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-                  Tipo *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Tag className="h-5 w-5 text-zinc-400" />
-                  </div>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition-all duration-200 appearance-none cursor-pointer"
-                  >
-                    <option value="product">Produto</option>
-                    <option value="service">Serviço</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-                  Preço
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-zinc-400" />
-                  </div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition-all duration-200"
-                    placeholder="0,00"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-                  Descrição
-                </label>
-                <div className="relative">
-                  <div className="absolute top-3 left-3 pointer-events-none">
-                    <FileText className="h-5 w-5 text-zinc-400" />
-                  </div>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition-all duration-200 resize-none"
-                    rows={3}
-                    placeholder="Descrição do produto"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 px-4 py-3 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl font-semibold shadow-lg shadow-zinc-900/20 dark:shadow-zinc-100/10 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                >
-                  {editingProduct ? 'Salvar' : 'Criar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Products Grid */}
       {filteredProducts.length === 0 ? (
@@ -349,13 +176,13 @@ export default function ProductsPage() {
                   </div>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button
-                    onClick={() => handleEdit(product)}
+                  <Link
+                    href={`/products/${product.id}/edit`}
                     className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                     title="Editar"
                   >
                     <Edit className="w-4 h-4" />
-                  </button>
+                  </Link>
                   <button
                     onClick={() => handleDelete(product.id)}
                     className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-zinc-500 hover:text-red-600"
