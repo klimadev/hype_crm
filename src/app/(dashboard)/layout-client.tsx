@@ -14,7 +14,8 @@ import {
   User,
   Bell,
   X,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from 'lucide-react';
 
 interface NavItem {
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
   { href: '/kanban', icon: KanbanSquare, label: 'Kanban', iconBg: 'group-hover:bg-indigo-600' },
   { href: '/products', icon: Package, label: 'Produtos', iconBg: 'group-hover:bg-emerald-600' },
   { href: '/instances', icon: Smartphone, label: 'Instâncias', iconBg: 'group-hover:bg-green-600' },
+  { href: '/webproxy', icon: MessageSquare, label: 'WhatsApp Web', iconBg: 'group-hover:bg-blue-600' },
 ];
 
 interface User {

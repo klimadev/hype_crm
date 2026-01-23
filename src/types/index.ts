@@ -152,6 +152,8 @@ export interface UpdateStageData {
   position?: number;
 }
 
+export type ScheduledReminderStatus = 'pending' | 'sent' | 'failed' | 'cancelled' | 'paused';
+
 export interface ReminderLog {
   id: number;
   lead_id: number;
