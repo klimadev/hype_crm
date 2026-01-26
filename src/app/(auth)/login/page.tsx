@@ -26,7 +26,10 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error || 'Usuário ou senha inválidos');
+        const message = result.error === 'CredentialsSignin'
+          ? 'Usuário ou senha incorretos.'
+          : 'Não foi possível entrar. Tente novamente.';
+        setError(message);
       } else if (result?.ok) {
         router.push('/kanban');
         router.refresh();

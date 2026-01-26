@@ -17,6 +17,7 @@ function getDb(): Database.Database {
 
   dbInstance = new Database(DB_PATH);
   dbInstance.pragma('journal_mode = WAL');
+  dbInstance.pragma('foreign_keys = ON');
 
   dbInstance.exec(CREATE_TABLES_SQL);
 
