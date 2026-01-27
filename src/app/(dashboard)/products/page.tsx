@@ -6,14 +6,10 @@ import {
   Plus,
   Search,
   Package,
-  Tag,
-  DollarSign,
-  FileText,
   Edit,
   Trash2,
   CheckCircle2,
   Sparkles,
-  AlertCircle,
 } from 'lucide-react';
 
 interface Product {
@@ -89,7 +85,7 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-xs font-medium text-emerald-600 dark:text-emerald-400">
               <Sparkles className="w-3 h-3" />
               Catálogo
             </span>
@@ -102,7 +98,7 @@ export default function ProductsPage() {
           className="inline-flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-zinc-900/20 dark:shadow-zinc-100/10 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
         >
           <Plus className="w-5 h-5" />
-          Novo Produto
+          Novo Item
         </Link>
       </div>
 
@@ -113,27 +109,36 @@ export default function ProductsPage() {
         </div>
         <input
           type="text"
-          placeholder="Buscar produtos..."
+          placeholder="Buscar produtos e serviços..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700/50 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition-all duration-200"
+          className="w-full pl-11 pr-4 py-3 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700/50 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-500 transition-all duration-200 shadow-sm"
         />
       </div>
 
       {/* Products Grid */}
       {filteredProducts.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-zinc-900/30 rounded-2xl border border-zinc-100 dark:border-zinc-800/50">
-          <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Package className="w-10 h-10 text-zinc-400" />
+          <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Package className="w-10 h-10 text-emerald-500/50" />
           </div>
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-            {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto ainda'}
+            {searchTerm ? 'Nenhum item encontrado' : 'Nenhum item no catálogo'}
           </h3>
-          <p className="text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+          <p className="text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto mb-8">
             {searchTerm 
-              ? 'Tente buscar com outro termo ou limpe o filtro' 
-              : 'Comece adicionando seu primeiro produto ao catálogo'}
+              ? 'Tente buscar com outro termo ou limpe o filtro para ver todos os itens.' 
+              : 'Comece adicionando produtos ou serviços para oferecer aos seus clientes.'}
           </p>
+          {!searchTerm && (
+            <Link
+              href="/products/new"
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all hover:shadow-lg hover:shadow-emerald-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar Primeiro Item
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

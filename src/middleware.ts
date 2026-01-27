@@ -48,7 +48,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    // Also exclude /api/webproxy, /browsers.html and /hype-console.js so the iframe can load without auth redirects.
-    '/((?!login|api/auth|api/webproxy|browsers\.html|hype-console\.js|wppconnect-wa\.js|_next/static|_next/image|favicon.ico).*)',
+    // Also exclude /api/webproxy and injected scripts so the iframe can load without auth redirects.
+    '/((?!login|api/auth|api/webproxy|browsers\.html|hype-console\.js|wppconnect-wa\.js|webproxy-bridge\.js|_next/static|_next/image|favicon.ico).*)',
   ],
 };

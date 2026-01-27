@@ -10,7 +10,7 @@ import {
   Search,
   AlertCircle,
   Settings2,
-  ArrowLeft,
+  KanbanSquare,
 } from 'lucide-react';
 import {
   DndContext,
@@ -242,12 +242,12 @@ function DraggableKanbanCard({
       {...listeners}
       {...attributes}
       className={`
-        relative bg-white dark:bg-zinc-900 rounded-2xl border-2 cursor-grab active:cursor-grabbing select-none
+        relative bg-white dark:bg-zinc-900 rounded-2xl border cursor-grab active:cursor-grabbing select-none
         ${isDragging
           ? 'border-indigo-400 dark:border-indigo-500 shadow-[0_25px_50px_-12px_rgba(99,102,241,0.4)] ring-4 ring-indigo-500/20 z-50'
-          : 'border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-lg hover:shadow-xl'
+          : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 shadow-sm hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-zinc-950/50'
         }
-        transition-shadow duration-200
+        transition-all duration-300
       `}
     >
       <Link
@@ -732,13 +732,10 @@ export default function KanbanBoard() {
             transition={{ delay: 0.1 }}
             className="flex items-center gap-2 mb-1"
           >
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Voltar
-            </Link>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full text-xs font-medium text-indigo-600 dark:text-indigo-400">
+              <KanbanSquare className="w-3 h-3" />
+              Pipeline
+            </span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 10 }}

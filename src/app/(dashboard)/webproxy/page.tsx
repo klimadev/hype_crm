@@ -33,26 +33,12 @@ type ManualCheckState = {
   timestamp: number | null;
 };
 
-type CommandPollStatus = {
-  status: 'ok' | 'error';
-  timestamp: number;
-  pending?: boolean;
-  error?: string;
-  lastCommandId?: string | null;
-};
-
 export default function WebProxyPage() {
   const [status, setStatus] = useState('');
   const [wppReady, setWppReady] = useState(false);
   const [activeChat, setActiveChat] = useState<ActiveChatPayload | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus | null>(null);
   const [isCheckingChat, setIsCheckingChat] = useState(false);
-  const [bridgeLoadedAt, setBridgeLoadedAt] = useState<number | null>(null);
-  const [injectSignalAt, setInjectSignalAt] = useState<number | null>(null);
-  const [bridgeLoadErrorAt, setBridgeLoadErrorAt] = useState<number | null>(null);
-  const [wppLoadAt, setWppLoadAt] = useState<number | null>(null);
-  const [wppLoadErrorAt, setWppLoadErrorAt] = useState<number | null>(null);
-  const [commandPoll, setCommandPoll] = useState<CommandPollStatus | null>(null);
   const [manualCheck, setManualCheck] = useState<ManualCheckState>({
     status: 'idle',
     message: 'Sem checagem manual ainda.',
@@ -216,35 +202,27 @@ export default function WebProxyPage() {
       }
 
       if (data.type === 'wa:bridge-loaded') {
-        const payload = data.payload as { timestamp?: number } | undefined;
-        setBridgeLoadedAt(payload?.timestamp ?? Date.now());
+        // ignore debug signals
       }
 
       if (data.type === 'wa:bridge-load-ok') {
-        const payload = data.payload as { timestamp?: number } | undefined;
-        setBridgeLoadedAt(payload?.timestamp ?? Date.now());
-        setBridgeLoadErrorAt(null);
+        // ignore debug signals
       }
 
       if (data.type === 'wa:bridge-load-error') {
-        const payload = data.payload as { timestamp?: number } | undefined;
-        setBridgeLoadErrorAt(payload?.timestamp ?? Date.now());
+        // ignore debug signals
       }
 
       if (data.type === 'wa:wpp-load-ok') {
-        const payload = data.payload as { timestamp?: number } | undefined;
-        setWppLoadAt(payload?.timestamp ?? Date.now());
-        setWppLoadErrorAt(null);
+        // ignore debug signals
       }
 
       if (data.type === 'wa:wpp-load-error') {
-        const payload = data.payload as { timestamp?: number } | undefined;
-        setWppLoadErrorAt(payload?.timestamp ?? Date.now());
+        // ignore debug signals
       }
 
       if (data.type === 'wa:inject') {
-        const payload = data.payload as { timestamp?: number } | undefined;
-        setInjectSignalAt(payload?.timestamp ?? Date.now());
+        // ignore debug signals
       }
 
       if (data.type === 'wa:bridge-status') {
@@ -253,11 +231,6 @@ export default function WebProxyPage() {
           setBridgeStatus(payload);
           if (payload.wppReady) setWppReady(true);
         }
-      }
-
-      if (data.type === 'wa:command-poll') {
-        const payload = data.payload as CommandPollStatus | undefined;
-        if (payload) setCommandPoll(payload);
       }
 
       if (data.type === 'wa:result' && data.requestId) {
@@ -375,33 +348,6 @@ export default function WebProxyPage() {
           >
             {isCheckingChat ? 'Checando...' : 'Checar agora'}
           </button>
-        </div>
-          <div className="mt-2 rounded-lg border border-zinc-200/60 bg-zinc-50/80 p-2 text-[11px] text-zinc-600 dark:border-zinc-800/60 dark:bg-zinc-950/40 dark:text-zinc-400">
-            <div>Manual: {manualCheck.message}</div>
-            <div>Inject signal: {injectSignalAt ? 'sim' : 'nao'}</div>
-            <div>WPP load: {wppLoadAt ? 'ok' : 'nao'}</div>
-            <div>WPP load error: {wppLoadErrorAt ? 'sim' : 'nao'}</div>
-            <div>Bridge loaded: {bridgeLoadedAt ? 'sim' : 'nao'}</div>
-            <div>Bridge load error: {bridgeLoadErrorAt ? 'sim' : 'nao'}</div>
-            <div>Bridge status: {bridgeStatus ? 'recebido' : 'nenhum'}</div>
-            <div>
-              Command poll: {commandPoll ? `${commandPoll.status}` : 'nenhum'}
-              {commandPoll?.pending ? ' (pending)' : ''}
-              {commandPoll?.lastCommandId ? ` | last: ${commandPoll.lastCommandId}` : ''}
-            </div>
-            {commandPoll?.status === 'error' && commandPoll.error && (
-              <div>Command error: {commandPoll.error}</div>
-            )}
-            {bridgeStatus && (
-            <div className="mt-1">
-              <div>Bridge: {bridgeStatus.wppReady ? 'ready' : 'not-ready'}</div>
-              <div>WPP: {bridgeStatus.hasWpp ? 'ok' : 'missing'} | Chat: {bridgeStatus.hasChat ? 'ok' : 'missing'}</div>
-              <div>getActiveChat: {bridgeStatus.hasGetActiveChat ? 'ok' : 'no'} | getActiveChatId: {bridgeStatus.hasGetActiveChatId ? 'ok' : 'no'}</div>
-              <div>getChatById: {bridgeStatus.hasGetChatById ? 'ok' : 'no'}</div>
-              <div>ChatStore: {bridgeStatus.hasChatStore ? 'ok' : 'no'} | LegacyStore: {bridgeStatus.hasLegacyStore ? 'ok' : 'no'}</div>
-              <div>lastActiveChatId: {bridgeStatus.lastActiveChatId || '-'}</div>
-            </div>
-          )}
         </div>
       </div>
       <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-950">

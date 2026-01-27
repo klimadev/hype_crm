@@ -282,9 +282,9 @@ body {
   .skeleton-shimmer {
     @apply relative overflow-hidden;
     background: linear-gradient(90deg, 
-      theme('colors.zinc.200') 0%, 
-      theme('colors.zinc.100') 50%, 
-      theme('colors.zinc.200') 100%
+      #e4e4e7 0%, 
+      #f4f4f5 50%, 
+      #e4e4e7 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
@@ -292,9 +292,9 @@ body {
 
   .dark .skeleton-shimmer {
     background: linear-gradient(90deg, 
-      theme('colors.zinc.800') 0%, 
-      theme('colors.zinc.700') 50%, 
-      theme('colors.zinc.800') 100%
+      #27272a 0%, 
+      #3f3f46 50%, 
+      #27272a 100%
     );
     background-size: 200% 100%;
   }
