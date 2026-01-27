@@ -1,68 +1,83 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function WebProxyPage() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [status, setStatus] = useState('Conectando...');
-  const [statusColor, setStatusColor] = useState('bg-yellow-500');
+  const [status, setStatus] = useState('');
 
-  const proxyUrl = '/api/webproxy?url=' + encodeURIComponent('https://web.whatsapp.com');
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [attempt, setAttempt] = useState(0);
+  const maxAttempts = 2;
+
+  const target = 'https://web.whatsapp.com';
+  const proxyUrl = useMemo(() => {
+    return '/api/webproxy?url=' + encodeURIComponent(target);
+  }, [target, reloadKey]);
+
+  const healthUrl = useMemo(() => {
+    return '/api/webproxy/health?url=' + encodeURIComponent(target);
+  }, [target, reloadKey]);
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'wpp-ready') {
-        setStatus('WhatsApp Pronto');
-        setStatusColor('bg-emerald-500');
-        setIsLoaded(true);
-      }
-    };
+    let alive = true;
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+    async function pollHealth() {
+      try {
+        const res = await fetch(healthUrl, { cache: 'no-store' });
+        const data = await res.json();
+        if (!alive) return;
+
+        if (data?.ok) {
+          // Visual: don't block UI when WA is already showing in iframe.
+          setStatus('');
+          return;
+        }
+
+        if (attempt < maxAttempts) {
+          setAttempt((v) => v + 1);
+          setReloadKey((v) => v + 1);
+          return;
+        }
+
+        setStatus('WhatsApp pode estar bloqueando este ambiente.');
+      } catch {
+        if (!alive) return;
+        if (attempt < maxAttempts) {
+          setAttempt((v) => v + 1);
+          setReloadKey((v) => v + 1);
+          return;
+        }
+        setStatus('Falha ao verificar conexão do WebProxy.');
+      }
+    }
+
+    const interval = window.setInterval(pollHealth, 6000);
+    pollHealth();
+
+    return () => {
+      alive = false;
+      window.clearInterval(interval);
+    };
+  }, [healthUrl, attempt]);
 
   const handleFrameLoad = () => {
-    if (status === 'Conectando...') {
-      setStatus('Carregado');
-      setStatusColor('bg-blue-500');
-    }
+    // Always show the iframe immediately; no blocking overlay.
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
-      {/* Status Bar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full ${statusColor} animate-pulse`} />
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{status}</span>
+      {!!status && (
+        <div className="px-4 py-2 text-sm bg-amber-50 text-amber-900 border-b border-amber-200 dark:bg-amber-900/20 dark:text-amber-100 dark:border-amber-900/40">
+          {status}
         </div>
-        <div className="flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
-          <span className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            SSL Ativo
-          </span>
-          <span className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Proxy Otimizado
-          </span>
-        </div>
-      </div>
-
-      {/* Frame Container */}
+      )}
       <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-950">
-        {!isLoaded && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-zinc-900 z-10">
-            <div className="w-12 h-12 border-3 border-zinc-200 dark:border-zinc-800 border-t-indigo-600 rounded-full animate-spin mb-4" />
-            <p className="text-zinc-600 dark:text-zinc-400 font-medium">Iniciando WebProxy...</p>
-          </div>
-        )}
         <iframe
+          key={proxyUrl}
           src={proxyUrl}
+          ref={iframeRef}
           className="w-full h-full border-none"
           onLoad={handleFrameLoad}
           allow="autoplay; camera; microphone; clipboard-read; clipboard-write;"

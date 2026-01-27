@@ -491,7 +491,7 @@
     function poll() {
         try {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/command.php', true);
+            xhr.open('GET', '/api/webproxy/command', true);
             xhr.onreadystatechange = async function() {
                 if (xhr.readyState === 4) {
                     try {
