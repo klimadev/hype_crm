@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { href: '/kanban', icon: KanbanSquare, label: 'Kanban', iconBg: 'group-hover:bg-indigo-600' },
   { href: '/products', icon: Package, label: 'Produtos', iconBg: 'group-hover:bg-emerald-600' },
   { href: '/instances', icon: Smartphone, label: 'Instâncias', iconBg: 'group-hover:bg-green-600' },
+  { href: '/chat', icon: MessageSquare, label: 'Conversas', iconBg: 'group-hover:bg-indigo-600' },
   { href: '/webproxy', icon: MessageSquare, label: 'WhatsApp Web', iconBg: 'group-hover:bg-blue-600' },
 ];
 
@@ -172,8 +173,8 @@ export default function DashboardLayoutClient({
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className={pathname === '/chat' ? '' : 'p-4 lg:p-8'}>
+          <div className={pathname === '/chat' ? 'h-[calc(100vh-64px)]' : 'max-w-7xl mx-auto'}>
             {children}
           </div>
         </main>
