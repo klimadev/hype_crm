@@ -79,8 +79,37 @@ function rewriteHtml(html: string, baseUrl: URL) {
 
 function injectScriptsIntoHtml(html: string) {
   const injectionScript = `
-<script src="/wppconnect-wa.js"></script>
-<script>
+ <script>
+ (function() {
+     try { window.parent.postMessage({ type: "wa:inject", version: 1, payload: { timestamp: Date.now() } }, "*"); } catch {}
+
+     function loadScript(src, onOk, onErr) {
+         try {
+             var s = document.createElement('script');
+             s.src = src;
+             s.async = true;
+             s.onload = onOk;
+             s.onerror = onErr;
+             (document.head || document.documentElement).appendChild(s);
+         } catch (e) {
+             if (onErr) onErr(e);
+         }
+     }
+
+      loadScript('/wppconnect-wa.js?v=' + Date.now(), function () {
+          try { window.parent.postMessage({ type: "wa:wpp-load-ok", version: 1, payload: { timestamp: Date.now() } }, "*"); } catch {}
+      }, function () {
+          try { window.parent.postMessage({ type: "wa:wpp-load-error", version: 1, payload: { timestamp: Date.now() } }, "*"); } catch {}
+      });
+
+      loadScript('/webproxy-bridge.js?v=' + Date.now(), function () {
+          try { window.parent.postMessage({ type: "wa:bridge-load-ok", version: 1, payload: { timestamp: Date.now() } }, "*"); } catch {}
+      }, function () {
+          try { window.parent.postMessage({ type: "wa:bridge-load-error", version: 1, payload: { timestamp: Date.now() } }, "*"); } catch {}
+      });
+ })();
+ </script>
+ <script>
 (function() {
     if (window.__WPP_INJECTED__) return;
     window.__WPP_INJECTED__ = true;
@@ -103,8 +132,7 @@ function injectScriptsIntoHtml(html: string) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", waitWppReady);
     else waitWppReady();
 })();
-</script>
-<script src="/hype-console.js"></script>`;
+ </script>`;
 
   if (/<\/body>/i.test(html)) {
     return html.replace(/<\/body>/i, `${injectionScript}</body>`);
@@ -231,7 +259,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const contentType = response.headers['content-type'] || '';
+    const rawContentType = response.headers['content-type'];
+    const contentType = Array.isArray(rawContentType) ? rawContentType.join(',') : (rawContentType || '');
 
     // Healthcheck: don't rewrite/inject, just verify we can reach WA and it's not the unsupported browser page.
     if (isHealthcheckRequest(request)) {
@@ -253,10 +282,21 @@ export async function GET(request: NextRequest) {
     }
 
     let htmlContent: string | null = null;
+    let bodyText: string | null = null;
+    const isHtml = contentType.includes('text/html') || contentType.includes('application/xhtml+xml');
 
-    if (contentType.includes('text/html')) {
+    if (isHtml) {
+      bodyText = response.body.toString('utf-8');
+    } else if (!contentType || contentType.startsWith('text/')) {
+      const maybeText = response.body.toString('utf-8');
+      if (shouldInjectIntoHtml(maybeText)) {
+        bodyText = maybeText;
+      }
+    }
+
+    if (bodyText !== null) {
       const base = new URL(response.finalUrl || targetUrl);
-      let content = rewriteHtml(response.body.toString('utf-8'), base);
+      let content = rewriteHtml(bodyText, base);
       if (shouldInjectIntoHtml(content)) {
         content = injectScriptsIntoHtml(content);
       }
